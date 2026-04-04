@@ -208,19 +208,18 @@ print("✓ fig3_final_accuracy.png")
 # We don't have the matrices saved, so we re-derive *effective* arm preference
 # scores from the log itself: per-feature accuracy breakdown per arm.
 
-# Per-categorical-feature, per-arm accuracy
+# ═══════════════════════════════════════════════════════════════════════════════
+# FIG 4 — Weight Heatmap  (what LinUCB-Semantic learned)
+# ═══════════════════════════════════════════════════════════════════════════════
+
 ARMS = ["NOW", "MUTE", "BATCH"]
 CAT_COLS = ["app_source", "sender_type", "user_context", "time_slot"]
 
-# Reload full simulation log merged with the original notification data
-# (simulation_log has true_action and choices)
 orig = pd.read_csv("notifications_10k_with_embeddings.csv")
 merged = pd.concat([orig.reset_index(drop=True),
                     log[["LinUCB_Sem_choice"]].reset_index(drop=True)], axis=1)
 merged["correct_sem"] = (merged["LinUCB_Sem_choice"] == merged["true_optimal_action"]).astype(int)
 
-# Build a feature × arm affinity matrix
-# Affinity = P(agent chose arm | feature value) − P(arm globally)
 global_arm_probs = log["LinUCB_Sem_choice"].value_counts(normalize=True)
 
 rows_labels = []
@@ -235,12 +234,14 @@ for col in CAT_COLS:
             p     = arm_probs.get(arm, 0)
             p_glo = global_arm_probs.get(arm, 0)
             affinities.append(p - p_glo)
-        rows_labels.append(f"{col}\n={val}")
+        # FIX 1: Removed newline to save vertical space
+        rows_labels.append(f"{col}: {val}")
         heatmap_data.append(affinities)
 
-heatmap_arr = np.array(heatmap_data)   # shape (features, 3)
+heatmap_arr = np.array(heatmap_data)
 
-fig4, ax4 = plt.subplots(figsize=(6, max(6, len(rows_labels) * 0.38)))
+# FIX 2: Wider figure (8 instead of 6) and slightly taller rows (0.45 instead of 0.38)
+fig4, ax4 = plt.subplots(figsize=(8, len(rows_labels) * 0.45))
 
 vmax = np.abs(heatmap_arr).max()
 im   = ax4.imshow(heatmap_arr, aspect="auto", cmap="RdYlGn",
@@ -249,39 +250,39 @@ im   = ax4.imshow(heatmap_arr, aspect="auto", cmap="RdYlGn",
 ax4.set_xticks(range(len(ARMS)))
 ax4.set_xticklabels(ARMS, fontweight="bold", fontsize=11)
 ax4.set_yticks(range(len(rows_labels)))
-ax4.set_yticklabels(rows_labels, fontsize=7.5)
+ax4.set_yticklabels(rows_labels, fontsize=8.5)
 ax4.set_title("LinUCB-Semantic: Arm Affinity by Feature\n"
               "(green = over-represented, red = under-represented vs. global rate)",
-              fontsize=11)
+              fontsize=11, pad=15)
 
-# Annotate cells
 for i in range(len(rows_labels)):
     for j in range(len(ARMS)):
         v = heatmap_arr[i, j]
         ax4.text(j, i, f"{v:+.2f}", ha="center", va="center",
-                 fontsize=6.5,
+                 fontsize=7.5,
                  color="white" if abs(v) > 0.15 else "#333333",
                  fontweight="bold" if abs(v) > 0.15 else "normal")
 
 cbar = fig4.colorbar(im, ax=ax4, fraction=0.03, pad=0.02)
 cbar.set_label("Affinity  (Δ from global arm rate)", fontsize=9)
 
-# Dividers between feature groups
 group_sizes = [len(merged[col].unique()) for col in CAT_COLS]
 dividers = np.cumsum(group_sizes)[:-1] - 0.5
 for d in dividers:
     ax4.axhline(d, color="white", lw=2.0)
 
-# Group labels on left margin
 start = 0
-group_labels = ["App\nSource", "Sender\nType", "User\nContext", "Time\nSlot"]
+group_labels = ["App Source", "Sender Type", "User Context", "Time Slot"]
 for glabel, gsize in zip(group_labels, group_sizes):
     mid = start + gsize / 2 - 0.5
-    ax4.text(-0.85, mid, glabel, ha="right", va="center",
-             fontsize=8, fontweight="bold", color="#444444",
+    # FIX 3: Adjusted X coordinate for the side labels so they don't clip
+    ax4.text(-0.55, mid, glabel, ha="right", va="center",
+             fontsize=9, fontweight="bold", color="#444444",
              transform=ax4.get_yaxis_transform())
     start += gsize
 
+# FIX 4: Explicitly force a left margin so tight_layout doesn't crush the heatmap
+fig4.subplots_adjust(left=0.3)
 fig4.tight_layout()
 fig4.savefig("results/fig4_weight_heatmap.png")
 plt.close(fig4)
