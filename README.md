@@ -30,18 +30,16 @@ The pipeline is split into modular stages to simulate a full production environm
 
 ---
 
-### Empirical Results
-Over a 10,000-step simulation, the Semantic LinUCB agent definitively outperformed both human intuition and standard ML baselines:
+### Performance Overview
+We migrated from strict classification accuracy to a **Risk-Aware Utility Model**. By using an asymmetric reward matrix, we penalize high-friction interruptions (e.g., disturbing a user during 'In Class' or 'Sleeping' states) more heavily than missed notifications.
+| Figure | Description |
+| :--- | :--- |
+| ![Cumulative Regret](<Stage 5 Paper Figures/results/fig1_cumulative_regret.png>) | **Cumulative Regret:** Convergence toward the optimal utility policy. |
+| ![Rolling Utility](<Stage 5 Paper Figures/results/fig2_rolling_accuracy.png>) | **Rolling Average Reward:** Utility gains via semantic cues. |
+| ![Final Utility](<Stage 5 Paper Figures/results/fig3_final_accuracy.png>) | **Final Utility Comparison:** LinUCB-Semantic vs Baselines. |
 
-| Agent | Final Accuracy | Total Regret |
-| :--- | :--- | :--- |
-| **LinUCB_Semantic (Novel)** | **79.1%** | **2,088** |
-| LinUCB_Tabular (Baseline) | 76.6% | 2,338 |
-| Rule-Based (Human Logic) | 60.1% | 3,985 |
-| Show-All (Dumb Baseline) | 33.4% | 6,655 |
-
-> [!TIP]
-> See the `/results` directory for high-resolution Cumulative Regret curves and the LinUCB Weight Heatmap demonstrating organic feature-learning.
+### What the Bandit Learned
+![Feature Affinity Heatmap](<Stage 5 Paper Figures/results/fig4_weight_heatmap.png>)
 
 ---
 ## How to Run
