@@ -1,0 +1,6 @@
+agent,total_correct,total_regret,accuracy_%
+ShowAll,3345,6655,33.45
+MuteAll,3548,6452,35.48
+RuleBased,6015,3985,60.15
+LinUCB_Tab,7662,2338,76.62
+LinUCB_Sem,7912,2088,79.12
