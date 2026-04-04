@@ -27,6 +27,13 @@ CSV_IN      = "notifications_10k_with_embeddings.csv"
 RESULTS_DIR = "results"
 ALPHA       = 0.3          # LinUCB exploration parameter (tune if needed)
 SEED        = 42
+
+# Asymmetric Reward Matrix (True Action -> Chosen Action -> Reward)
+REWARD_MATRIX = {
+    "NOW":   {"NOW": 1.0,  "BATCH": 0.0,  "MUTE": -1.0},
+    "BATCH": {"NOW": -0.5, "BATCH": 1.0,  "MUTE": -0.5},
+    "MUTE":  {"NOW": -1.0, "BATCH": -0.2, "MUTE": 1.0}
+}
 # ─────────────────────────────────────────────────────────────────────────────
 
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -215,8 +222,8 @@ print("Running simulation...")
 t0 = time.time()
 
 # Per-agent tracking
-cumulative_reward  = {a.name: 0 for a in agents}
-cumulative_regret  = {a.name: 0 for a in agents}
+cumulative_reward  = {a.name: 0.0 for a in agents}
+cumulative_regret  = {a.name: 0.0 for a in agents}
 reward_history     = {a.name: [] for a in agents}
 regret_history     = {a.name: [] for a in agents}
 choice_history     = {a.name: [] for a in agents}
@@ -237,8 +244,9 @@ for t in range(N):
         else:
             chosen = agent.choose(row_dict)
 
-        reward = 1 if chosen == true_action else 0
-        regret = 0 if chosen == true_action else 1
+        # ── NEW ASYMMETRIC REWARD LOGIC ──
+        reward = REWARD_MATRIX[true_action][chosen]
+        regret = 1.0 - reward
 
         cumulative_reward[agent.name] += reward
         cumulative_regret[agent.name] += regret
@@ -253,7 +261,7 @@ for t in range(N):
     if (t + 1) % 1000 == 0:
         elapsed = time.time() - t0
         print(f"  Step {t+1:>5} / {N}  ({elapsed:.1f}s) — "
-              f"LinUCB_Sem acc: {reward_history['LinUCB_Sem'][-1]/(t+1):.3f}")
+              f"LinUCB_Sem avg rew: {reward_history['LinUCB_Sem'][-1]/(t+1):.3f}")
 
 print(f"\nSimulation complete in {time.time()-t0:.1f}s\n")
 
@@ -278,11 +286,11 @@ for agent in agents:
     accuracy     = final_reward / N
     summary_rows.append({
         "agent":          agent.name,
-        "total_correct":  final_reward,
+        "total_correct":  final_reward,   # Note: this is now total accumulated reward
         "total_regret":   final_regret,
-        "accuracy_%":     round(accuracy * 100, 2),
+        "accuracy_%":     round(accuracy * 100, 2), # Acts as normalized reward %
     })
-    print(f"  {agent.name:<15}  acc={accuracy:.3f}   regret={final_regret}")
+    print(f"  {agent.name:<15}  avg_rew={accuracy:.3f}   regret={final_regret:.1f}")
 
 summary_df = pd.DataFrame(summary_rows)
 summary_df.to_csv(f"{RESULTS_DIR}/agent_summary.csv", index=False)

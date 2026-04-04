@@ -133,11 +133,11 @@ for agent in ["LinUCB_Sem", "LinUCB_Tab"]:
     final_acc = summary.loc[summary["agent"] == agent, "accuracy_%"].values[0]
     ax2.axhline(final_acc, color=PALETTE[agent], lw=0.8, ls=":", alpha=0.5)
 
-ax2.set_title(f"Rolling Accuracy  (window = {WINDOW} notifications)")
+ax2.set_title(f"Rolling Average Reward  (window = {WINDOW} notifications)")
 ax2.set_xlabel("Notification (t)")
-ax2.set_ylabel("Accuracy  (%)")
+ax2.set_ylabel("Average Reward  (%)")
 ax2.set_xlim(0, N_TOTAL)
-ax2.set_ylim(0, 100)
+ax2.set_ylim(-30, 100)
 ax2.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x:.0f}%"))
 
 ax2.axvspan(0, WINDOW, color="#fff8e1", alpha=0.5, zorder=0)
@@ -176,9 +176,9 @@ ax3.axvline(chance, color="#757575", lw=1.2, ls="--", alpha=0.7)
 ax3.text(chance + 0.2, -0.5, f"Random\n({chance:.1f}%)",
          fontsize=8, color="#757575", va="bottom")
 
-ax3.set_xlabel("Final Accuracy  (%)")
-ax3.set_title("Agent Accuracy over 10,000 Notifications")
-ax3.set_xlim(0, 100)
+ax3.set_xlabel("Final Average Reward  (%)")
+ax3.set_title("Agent Reward Performance over 10,000 Notifications")
+ax3.set_xlim(-25, 100)
 ax3.xaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x:.0f}%"))
 ax3.grid(axis="x", alpha=0.25, linestyle="--")
 ax3.grid(axis="y", alpha=0)
